@@ -45,7 +45,8 @@ export function ProfileProvider({ children }: { children: React.ReactNode }) {
 
   const save = useCallback(async (p: Profile) => {
     setProfile(p);
-    await AsyncStorage.setItem(KEY, JSON.stringify(p));
+    // Storage can be unavailable (private mode, sandboxed previews): keep working in memory.
+    await AsyncStorage.setItem(KEY, JSON.stringify(p)).catch(() => {});
   }, []);
 
   const update = useCallback(
@@ -58,7 +59,7 @@ export function ProfileProvider({ children }: { children: React.ReactNode }) {
 
   const reset = useCallback(async () => {
     setProfile(null);
-    await AsyncStorage.removeItem(KEY);
+    await AsyncStorage.removeItem(KEY).catch(() => {});
   }, []);
 
   return <ProfileContext.Provider value={{ profile, loading, save, update, reset }}>{children}</ProfileContext.Provider>;
