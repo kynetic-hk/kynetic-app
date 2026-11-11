@@ -1,20 +1,22 @@
-// Kynetic design tokens — dark base with the brand orange.
-// TODO: swap `orange` for the exact hex from the logo file once confirmed.
+// Kynetic design tokens — from the "Kynetic Final Colour Palette":
+// FFFBF5 cream · B9B9B9 light grey · 666666 grey · 202020 charcoal · FF7700 orange · 30BABA teal
 export const colors = {
-  bg: '#0E0E10',
-  surface: '#17171A',
-  surfaceHigh: '#212126',
-  border: '#2A2A30',
-  text: '#F5F5F7',
-  textDim: '#A1A1AA',
-  textMute: '#6B6B75',
-  orange: '#FF6B1A',
-  orangeDim: '#FF6B1A26', // 15% alpha, for tints
-  good: '#3DDC97',
+  bg: '#202020', // palette charcoal
+  surface: '#2A2A2A', // charcoal, one step lighter for cards
+  surfaceHigh: '#343434',
+  border: '#3A3A3A',
+  text: '#FFFBF5', // palette cream
+  textDim: '#B9B9B9', // palette light grey
+  textMute: '#8A8A8A', // between palette greys, readable on charcoal
+  grey: '#666666', // palette grey (inactive bits)
+  orange: '#FF7700', // palette orange (primary)
+  orangeDim: '#FF770026', // 15% alpha, for tints
+  teal: '#30BABA', // palette teal (secondary accent)
+  good: '#30BABA',
   warn: '#FFC23D',
   bad: '#FF4D5E',
-  left: '#FF6B1A', // left side in L/R charts
-  right: '#F5F5F7', // right side in L/R charts
+  left: '#FF7700', // left side in L/R charts
+  right: '#30BABA', // right side in L/R charts
 };
 
 export const space = { xs: 4, sm: 8, md: 12, lg: 16, xl: 24, xxl: 32, xxxl: 48 };

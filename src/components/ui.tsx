@@ -39,7 +39,7 @@ export function Button({
         style,
       ]}
     >
-      <Text style={[s.btnText, variant === 'primary' && { color: '#120800' }]}>{title}</Text>
+      <Text style={[s.btnText, variant === 'primary' && { color: '#202020' }]}>{title}</Text>
     </Pressable>
   );
 }

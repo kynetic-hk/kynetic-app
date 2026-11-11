@@ -53,9 +53,9 @@ export default function Home() {
         {/* start workout */}
         <Pressable accessibilityRole="button" style={({ pressed }) => [st.start, pressed && { opacity: 0.9, transform: [{ scale: 0.99 }] }]}>
           <View style={{ flex: 1 }}>
-            <Text style={[type.label, { color: '#3A1800' }]}>Ready when you are</Text>
+            <Text style={[type.label, { color: '#202020B3' }]}>Ready when you are</Text>
             <Text style={st.startTitle}>Start workout</Text>
-            <Text style={{ color: '#3A1800', fontSize: 14, marginTop: 2 }}>Pick an exercise and get coached live</Text>
+            <Text style={{ color: '#202020B3', fontSize: 14, marginTop: 2 }}>Pick an exercise and get coached live</Text>
           </View>
           <View style={st.playBtn}>
             <PlayIcon color={colors.orange} size={22} />
@@ -201,8 +201,8 @@ const st = StyleSheet.create({
     padding: space.xl,
     marginBottom: space.md,
   },
-  startTitle: { fontSize: 28, fontWeight: '900', color: '#120800', letterSpacing: -0.6, marginTop: 2 },
-  playBtn: { width: 56, height: 56, borderRadius: 28, backgroundColor: '#120800', alignItems: 'center', justifyContent: 'center', paddingLeft: 3 },
+  startTitle: { fontSize: 28, fontWeight: '900', color: '#202020', letterSpacing: -0.6, marginTop: 2 },
+  playBtn: { width: 56, height: 56, borderRadius: 28, backgroundColor: '#202020', alignItems: 'center', justifyContent: 'center', paddingLeft: 3 },
   balWrap: { flex: 1, justifyContent: 'center', marginVertical: space.md },
   balTrack: { flexDirection: 'row', height: 10, marginTop: space.sm },
   rowBetween: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },

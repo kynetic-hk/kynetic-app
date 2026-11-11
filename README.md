@@ -45,8 +45,15 @@ docs/BLE.md             plan for the real Bluetooth link
 
 ## Design
 
-Dark base `#0E0E10`, brand orange `#FF6B1A` (placeholder: swap in the exact logo hex in `src/theme/index.ts`).
+Kynetic Final Colour Palette: charcoal `#202020` (background), cream `#FFFBF5` (text), greys `#B9B9B9` / `#666666`, orange `#FF7700` (primary), teal `#30BABA` (secondary, right side in L/R charts). Tokens live in `src/theme/index.ts`.
 
 ## Demo vs real sensors
 
 Every screen reads sensor data through `getSensorSource()` (`src/sensors/index.ts`). Today that returns `MockSensorSource`, which simulates 5 pods and streams realistic curl data, so the app works for demos with no hardware. Adding Bluetooth means writing a `BleSensorSource` with the same interface. The screens don't change.
+
+## Deploy the web demo (Vercel)
+
+1. On vercel.com: **Add New → Project**, import `kynetic-hk/kynetic-app`.
+2. Settings are picked up from `vercel.json` (build `npx expo export --platform web`, output `dist`). Click **Deploy**.
+
+The web version runs in demo mode (simulated pods). Real Bluetooth needs the phone app build.
