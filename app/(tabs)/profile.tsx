@@ -1,45 +1,82 @@
 import { router } from 'expo-router';
+import { useState } from 'react';
 import { ScrollView, Text, View } from 'react-native';
+import { Avatar, AvatarLook, DEFAULT_LOOK } from '../../src/components/Avatar';
+import { AvatarBuilder } from '../../src/components/AvatarBuilder';
+import { LanguagePicker } from '../../src/components/LanguagePicker';
 import { Screen } from '../../src/components/Screen';
 import { Button, Card } from '../../src/components/ui';
+import { useI18n } from '../../src/i18n';
 import { useProfile } from '../../src/store/profile';
 import { colors, space, type } from '../../src/theme';
 
-const GOAL_LABEL: Record<string, string> = {
-  fix_form: 'Perfect form',
-  build_muscle: 'Build muscle',
-  get_stronger: 'Get stronger',
-  fix_imbalances: 'Fix imbalances',
-  prevent_injury: 'Avoid injury',
-};
+/** Older profiles stored area names like "Lower back"; map them to ids. */
+const areaId = (a: string) => a.toLowerCase().replace(/\s+/g, '_');
 
 export default function ProfileTab() {
-  const { profile, reset } = useProfile();
+  const { profile, reset, update } = useProfile();
+  const { t, locale } = useI18n();
+  const [editing, setEditing] = useState(false);
+  const [look, setLook] = useState<AvatarLook>(profile?.avatar ?? DEFAULT_LOOK);
   if (!profile) return null;
 
+  const date = (iso: string) => new Date(iso).toLocaleDateString(locale);
   const rows: [string, string][] = [
-    ['Age', profile.age ? String(profile.age) : '—'],
-    ['Height', profile.heightCm ? `${profile.heightCm} cm` : '—'],
-    ['Weight', profile.weightKg ? `${profile.weightKg} kg` : '—'],
-    ['Dominant arm', cap(profile.dominantArm)],
-    ['Experience', cap(profile.experience)],
-    ['Goals', profile.goals.map((g) => GOAL_LABEL[g]).join(', ') || '—'],
-    ['Careful with', profile.injuries.join(', ') || 'Nothing noted'],
-    ['Sensors', profile.pairedSensors.length ? `${profile.pairedSensors.length} paired` : 'Not paired'],
-    ['Calibrated', profile.calibratedAt ? new Date(profile.calibratedAt).toLocaleDateString() : 'Not yet'],
+    [t('prof.age'), profile.age ? String(profile.age) : '—'],
+    [t('prof.height'), profile.heightCm ? `${profile.heightCm} cm` : '—'],
+    [t('prof.weight'), profile.weightKg ? `${profile.weightKg} kg` : '—'],
+    [t('prof.dominant'), t(profile.dominantArm === 'left' ? 'common.left' : 'common.right')],
+    [t('prof.exp'), t(`exp.${profile.experience}`)],
+    [t('prof.goals'), profile.goals.map((g) => t(`goal.${g}`)).join(', ') || '—'],
+    [t('prof.careful'), profile.injuries.map((a) => t(`area.${areaId(a)}`)).join(', ') || t('prof.nothing')],
+    [t('prof.sensors'), profile.pairedSensors.length ? t('prof.nPaired', { n: profile.pairedSensors.length }) : t('prof.notPaired')],
+    [t('prof.calibrated'), profile.calibratedAt ? date(profile.calibratedAt) : t('prof.notYet')],
   ];
 
   return (
     <Screen edges={['top']}>
       <ScrollView contentContainerStyle={{ padding: space.xl, paddingBottom: 120 }}>
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: space.lg, marginBottom: space.xl }}>
-          <View style={{ width: 64, height: 64, borderRadius: 32, backgroundColor: colors.orange, alignItems: 'center', justifyContent: 'center' }}>
-            <Text style={{ fontSize: 28, fontWeight: '900', color: colors.bg }}>{profile.name[0]?.toUpperCase()}</Text>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: space.lg, marginBottom: space.lg }}>
+          <View
+            style={{
+              width: 76,
+              height: 76,
+              borderRadius: 38,
+              backgroundColor: colors.surfaceHigh,
+              borderWidth: 2,
+              borderColor: colors.orange,
+              alignItems: 'center',
+              justifyContent: 'center',
+              overflow: 'hidden',
+            }}
+          >
+            <Avatar look={profile.avatar ?? DEFAULT_LOOK} headOnly size={66} />
           </View>
-          <View>
+          <View style={{ flex: 1 }}>
             <Text style={type.h1}>{profile.name}</Text>
-            <Text style={type.small}>Member since {new Date(profile.createdAt).toLocaleDateString()}</Text>
+            <Text style={type.small}>{t('prof.since', { d: date(profile.createdAt) })}</Text>
           </View>
+        </View>
+
+        {editing ? (
+          <Card style={{ marginBottom: space.lg }}>
+            <AvatarBuilder look={look} onChange={setLook} />
+            <Button
+              title={t('prof.saveAvatar')}
+              style={{ marginTop: space.lg }}
+              onPress={async () => {
+                await update({ avatar: look });
+                setEditing(false);
+              }}
+            />
+          </Card>
+        ) : (
+          <Button title={t('prof.editAvatar')} variant="secondary" style={{ marginBottom: space.lg }} onPress={() => setEditing(true)} />
+        )}
+
+        <Text style={[type.label, { marginBottom: space.sm }]}>{t('lang.title')}</Text>
+        <View style={{ marginBottom: space.lg }}>
+          <LanguagePicker full />
         </View>
 
         <Card>
@@ -62,7 +99,7 @@ export default function ProfileTab() {
         </Card>
 
         <Button
-          title="Reset & redo setup"
+          title={t('prof.reset')}
           variant="secondary"
           style={{ marginTop: space.xl }}
           onPress={async () => {
@@ -70,10 +107,8 @@ export default function ProfileTab() {
             router.replace('/onboarding');
           }}
         />
-        <Text style={[type.small, { textAlign: 'center', marginTop: space.sm, color: colors.textMute }]}>Handy for demos — clears your profile on this device.</Text>
+        <Text style={[type.small, { textAlign: 'center', marginTop: space.sm, color: colors.textMute }]}>{t('prof.resetNote')}</Text>
       </ScrollView>
     </Screen>
   );
 }
-
-const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);

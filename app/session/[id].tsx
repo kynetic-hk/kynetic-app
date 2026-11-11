@@ -4,12 +4,14 @@ import { Screen } from '../../src/components/Screen';
 import { Button, Card, ScoreRing } from '../../src/components/ui';
 import { exerciseById } from '../../src/data/exercises';
 import { sessionBalance, sessionReps, sessionScore, SetResult } from '../../src/data/sessions';
+import { sessionTitle, useI18n } from '../../src/i18n';
 import { useWorkout } from '../../src/store/workout';
 import { colors, radius, scoreColor, space, type } from '../../src/theme';
 
 export default function SessionSummary() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { sessions } = useWorkout();
+  const { t, locale } = useI18n();
   const s = sessions.find((x) => x.id === id);
 
   const close = () => (router.canGoBack() ? router.back() : router.replace('/home'));
@@ -17,8 +19,8 @@ export default function SessionSummary() {
   if (!s)
     return (
       <Screen style={{ alignItems: 'center', justifyContent: 'center', padding: space.xl }}>
-        <Text style={[type.h2, { marginBottom: space.lg }]}>Session not found</Text>
-        <Button title="Back to Home" onPress={() => router.replace('/home')} />
+        <Text style={[type.h2, { marginBottom: space.lg }]}>{t('sum.notFound')}</Text>
+        <Button title={t('rev.backHome')} onPress={() => router.replace('/home')} />
       </Screen>
     );
 
@@ -35,24 +37,24 @@ export default function SessionSummary() {
   return (
     <Screen edges={['top', 'bottom']}>
       <View style={st.top}>
-        <Pressable onPress={close} hitSlop={12} accessibilityRole="button" accessibilityLabel="Close">
+        <Pressable onPress={close} hitSlop={12} accessibilityRole="button" accessibilityLabel={t('common.close')}>
           <Text style={{ color: colors.text, fontSize: 22 }}>✕</Text>
         </Pressable>
         <Text style={type.small}>
-          {new Date(s.date).toLocaleDateString(undefined, { weekday: 'short', day: 'numeric', month: 'short' })}
-          {s.demo ? ' · demo' : ''}
+          {new Date(s.date).toLocaleDateString(locale, { weekday: 'short', day: 'numeric', month: 'short' })}
+          {s.demo ? ` · ${t('sum.demo')}` : ''}
         </Text>
       </View>
       <ScrollView contentContainerStyle={{ padding: space.xl, paddingTop: space.sm, paddingBottom: space.xxxl }}>
-        <Text style={[type.label, { color: colors.orange }]}>Session complete</Text>
-        <Text style={[type.h1, { marginTop: space.sm }]}>{s.title}</Text>
+        <Text style={[type.label, { color: colors.orange }]}>{t('sum.complete')}</Text>
+        <Text style={[type.h1, { marginTop: space.sm }]}>{sessionTitle(s.title, t)}</Text>
 
         <View style={st.hero}>
-          <ScoreRing score={score} size={150} stroke={12} label="session" />
+          <ScoreRing score={score} size={150} stroke={12} label={t('sum.session')} />
           <View style={{ flex: 1, gap: space.md }}>
-            <Stat label="Duration" value={`${s.durationMin} min`} />
-            <Stat label="Sets" value={String(s.sets.length)} />
-            <Stat label="Reps" value={String(sessionReps(s))} />
+            <Stat label={t('sum.duration')} value={t('sum.durationVal', { n: s.durationMin })} />
+            <Stat label={t('sum.sets')} value={String(s.sets.length)} />
+            <Stat label={t('sum.reps')} value={String(sessionReps(s))} />
           </View>
         </View>
 
@@ -60,7 +62,7 @@ export default function SessionSummary() {
           {(['rom', 'tempo', 'form'] as const).map((k) => (
             <Card key={k} style={{ flex: 1, alignItems: 'center', padding: space.md }}>
               <Text style={[type.h2, { color: scoreColor(avg(k)) }]}>{avg(k)}</Text>
-              <Text style={[type.label, { fontSize: 10 }]}>{k === 'rom' ? 'Range' : k === 'tempo' ? 'Tempo' : 'Form'}</Text>
+              <Text style={[type.label, { fontSize: 10 }]}>{t(`metric.${k}`)}</Text>
             </Card>
           ))}
           <Card style={{ flex: 1, alignItems: 'center', padding: space.md }}>
@@ -73,14 +75,14 @@ export default function SessionSummary() {
           </Card>
         </View>
 
-        <Text style={[type.h2, { marginTop: space.xl, marginBottom: space.md }]}>Exercises</Text>
+        <Text style={[type.h2, { marginTop: space.xl, marginBottom: space.md }]}>{t('sum.exercises')}</Text>
         {groups.map((g) => (
           <Card key={g.ex} style={{ marginBottom: space.md }}>
-            <Text style={type.h3}>{exerciseById(g.ex).name}</Text>
+            <Text style={type.h3}>{t(`ex.${exerciseById(g.ex).id}.name`)}</Text>
             {g.sets.map((x, k) => (
               <View key={k} style={st.setRow}>
-                <Text style={[type.small, { width: 48 }]}>Set {k + 1}</Text>
-                <Text style={[type.body, { width: 64 }]}>{x.reps} reps</Text>
+                <Text style={[type.small, { width: 56 }]}>{t('sum.setN', { n: k + 1 })}</Text>
+                <Text style={[type.body, { width: 64 }]}>{t('sum.nReps', { n: x.reps })}</Text>
                 <View style={st.miniTrack}>
                   <View style={[st.miniFill, { width: `${x.score}%`, backgroundColor: scoreColor(x.score) }]} />
                 </View>
@@ -90,7 +92,7 @@ export default function SessionSummary() {
           </Card>
         ))}
 
-        <Button title="Done" onPress={() => router.replace('/home')} style={{ marginTop: space.lg }} />
+        <Button title={t('common.done')} onPress={() => router.replace('/home')} style={{ marginTop: space.lg }} />
       </ScrollView>
     </Screen>
   );

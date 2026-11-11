@@ -1,10 +1,12 @@
 import { Redirect, Tabs } from 'expo-router';
 import { BookIcon, ChartIcon, HomeIcon, UserIcon } from '../../src/components/icons';
+import { useI18n } from '../../src/i18n';
 import { useProfile } from '../../src/store/profile';
 import { colors } from '../../src/theme';
 
 export default function TabsLayout() {
   const { profile, loading } = useProfile();
+  const { t } = useI18n();
   if (!loading && !profile) return <Redirect href="/onboarding" />;
 
   return (
@@ -18,10 +20,10 @@ export default function TabsLayout() {
         sceneStyle: { backgroundColor: colors.bg },
       }}
     >
-      <Tabs.Screen name="home" options={{ title: 'Home', tabBarIcon: ({ color }) => <HomeIcon color={color} /> }} />
-      <Tabs.Screen name="progress" options={{ title: 'Progress', tabBarIcon: ({ color }) => <ChartIcon color={color} /> }} />
-      <Tabs.Screen name="library" options={{ title: 'Library', tabBarIcon: ({ color }) => <BookIcon color={color} /> }} />
-      <Tabs.Screen name="profile" options={{ title: 'Profile', tabBarIcon: ({ color }) => <UserIcon color={color} /> }} />
+      <Tabs.Screen name="home" options={{ title: t('tab.home'), tabBarIcon: ({ color }) => <HomeIcon color={color} /> }} />
+      <Tabs.Screen name="progress" options={{ title: t('tab.progress'), tabBarIcon: ({ color }) => <ChartIcon color={color} /> }} />
+      <Tabs.Screen name="library" options={{ title: t('tab.library'), tabBarIcon: ({ color }) => <BookIcon color={color} /> }} />
+      <Tabs.Screen name="profile" options={{ title: t('tab.profile'), tabBarIcon: ({ color }) => <UserIcon color={color} /> }} />
     </Tabs>
   );
 }

@@ -4,17 +4,19 @@ import { Screen } from '../../src/components/Screen';
 import Svg, { Circle, Defs, LinearGradient, Line, Path, Stop } from 'react-native-svg';
 import { Card, Chip } from '../../src/components/ui';
 import { sessionBalance, sessionReps, sessionScore, Session } from '../../src/data/sessions';
+import { useI18n } from '../../src/i18n';
 import { useWorkout } from '../../src/store/workout';
 import { colors, space, type } from '../../src/theme';
 
 type Metric = 'score' | 'rom' | 'tempo' | 'form';
-const LABEL: Record<Metric, string> = { score: 'Score', rom: 'Range', tempo: 'Tempo', form: 'Form' };
+const METRICS: Metric[] = ['score', 'rom', 'tempo', 'form'];
 
 const value = (s: Session, m: Metric) =>
   m === 'score' ? sessionScore(s) : Math.round(s.sets.reduce((a, b) => a + b[m], 0) / Math.max(1, s.sets.length));
 
 export default function Progress() {
   const { sessions } = useWorkout();
+  const { t, locale } = useI18n();
   const [metric, setMetric] = useState<Metric>('score');
   const chron = [...sessions].reverse();
   const vals = chron.map((s) => value(s, metric));
@@ -26,41 +28,41 @@ export default function Progress() {
   return (
     <Screen edges={['top']}>
       <ScrollView contentContainerStyle={{ padding: space.xl, paddingBottom: 120 }}>
-        <Text style={type.h1}>Progress</Text>
+        <Text style={type.h1}>{t('prog.title')}</Text>
 
         <View style={st.statsRow}>
-          <Stat label="Sessions" value={sessions.length} />
-          <Stat label="Total reps" value={totalReps} />
-          <Stat label="Best score" value={best} />
+          <Stat label={t('prog.sessions')} value={sessions.length} />
+          <Stat label={t('prog.totalReps')} value={totalReps} />
+          <Stat label={t('prog.best')} value={best} />
         </View>
 
         <Card style={{ marginTop: space.md }}>
           <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-end' }}>
             <View>
-              <Text style={type.label}>{LABEL[metric]} trend</Text>
+              <Text style={type.label}>{t('prog.trend', { m: t(`metric.${metric}`) })}</Text>
               <Text style={[type.number, { marginTop: 4 }]}>{lastV}</Text>
             </View>
             <Text style={[type.h3, { color: lastV >= first ? colors.teal : colors.bad }]}>
-              {lastV >= first ? '▲' : '▼'} {Math.abs(lastV - first)} since first
+              {t('prog.sinceFirst', { n: `${lastV >= first ? '▲' : '▼'} ${Math.abs(lastV - first)}` })}
             </Text>
           </View>
           <LineChart values={vals} />
           <View style={st.chips}>
-            {(Object.keys(LABEL) as Metric[]).map((m) => (
-              <Chip key={m} label={LABEL[m]} selected={metric === m} onPress={() => setMetric(m)} />
+            {METRICS.map((m) => (
+              <Chip key={m} label={t(`metric.${m}`)} selected={metric === m} onPress={() => setMetric(m)} />
             ))}
           </View>
         </Card>
 
         <Card style={{ marginTop: space.md }}>
-          <Text style={type.label}>Left / right balance</Text>
-          <Text style={[type.small, { marginTop: 4, marginBottom: space.md }]}>Closer to the centre line is better.</Text>
+          <Text style={type.label}>{t('prog.balTitle')}</Text>
+          <Text style={[type.small, { marginTop: 4, marginBottom: space.md }]}>{t('prog.balSub')}</Text>
           {chron.map((s) => {
             const b = sessionBalance(s);
             const off = b.left - 50; // negative = left weaker
             return (
               <View key={s.id} style={st.balRow}>
-                <Text style={[type.small, { width: 56 }]}>{new Date(s.date).toLocaleDateString(undefined, { day: 'numeric', month: 'short' })}</Text>
+                <Text style={[type.small, { width: 56 }]}>{new Date(s.date).toLocaleDateString(locale, { day: 'numeric', month: 'short' })}</Text>
                 <View style={st.balTrack}>
                   <View style={st.balCenter} />
                   <View
@@ -77,8 +79,8 @@ export default function Progress() {
             );
           })}
           <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: space.sm, paddingHorizontal: 56 }}>
-            <Text style={[type.label, { fontSize: 10, color: colors.right }]}>Right doing more</Text>
-            <Text style={[type.label, { fontSize: 10, color: colors.left }]}>Left doing more</Text>
+            <Text style={[type.label, { fontSize: 10, color: colors.right }]}>{t('prog.rightMore')}</Text>
+            <Text style={[type.label, { fontSize: 10, color: colors.left }]}>{t('prog.leftMore')}</Text>
           </View>
         </Card>
       </ScrollView>

@@ -3,10 +3,12 @@ import { useState } from 'react';
 import { LayoutAnimation, Platform, Pressable, ScrollView, StyleSheet, Text, UIManager, View } from 'react-native';
 import { Screen } from '../../src/components/Screen';
 import { BodyMap } from '../../src/components/BodyMap';
-import { FormDemo } from '../../src/components/FormDemo';
+import { AvatarDemo, DEFAULT_LOOK } from '../../src/components/Avatar';
 import { Button } from '../../src/components/ui';
 import { EXERCISES } from '../../src/data/exercises';
+import { useI18n } from '../../src/i18n';
 import { getSensorSource } from '../../src/sensors';
+import { useProfile } from '../../src/store/profile';
 import { useWorkout } from '../../src/store/workout';
 import { colors, radius, space, type } from '../../src/theme';
 
@@ -15,12 +17,14 @@ if (Platform.OS === 'android') UIManager.setLayoutAnimationEnabledExperimental?.
 export default function Library() {
   const [open, setOpen] = useState<string | null>(EXERCISES[0].id);
   const { startWorkout } = useWorkout();
+  const { t } = useI18n();
+  const { profile } = useProfile();
 
   return (
     <Screen edges={['top']}>
       <ScrollView contentContainerStyle={{ padding: space.xl, paddingBottom: 120 }}>
-        <Text style={type.h1}>Library</Text>
-        <Text style={[type.small, { marginTop: space.xs, marginBottom: space.xl }]}>How to do each exercise properly, and what Kynetic watches for.</Text>
+        <Text style={type.h1}>{t('lib.title')}</Text>
+        <Text style={[type.small, { marginTop: space.xs, marginBottom: space.xl }]}>{t('lib.sub')}</Text>
 
         {EXERCISES.map((e) => {
           const isOpen = open === e.id;
@@ -36,10 +40,10 @@ export default function Library() {
                 style={st.head}
               >
                 <View style={{ flex: 1 }}>
-                  <Text style={type.h2}>{e.name}</Text>
-                  <Text style={type.small}>{e.muscles.join(' · ')}</Text>
+                  <Text style={type.h2}>{t(`ex.${e.id}.name`)}</Text>
+                  <Text style={type.small}>{e.muscles.map((m) => t(`muscle.${m}`)).join(' · ')}</Text>
                 </View>
-                {e.status === 'soon' ? <Text style={[type.label, { fontSize: 10 }]}>Tracking soon</Text> : null}
+                {e.status === 'soon' ? <Text style={[type.label, { fontSize: 10 }]}>{t('lib.soon')}</Text> : null}
                 <Text style={{ color: colors.textDim, fontSize: 18, marginLeft: space.sm }}>{isOpen ? '−' : '+'}</Text>
               </Pressable>
 
@@ -47,34 +51,34 @@ export default function Library() {
                 <View>
                   <View style={st.visuals}>
                     <View style={st.visualBox}>
-                      <FormDemo exercise={e.id} size={140} />
-                      <Text style={[type.label, { fontSize: 10 }]}>Correct form</Text>
+                      <AvatarDemo look={profile?.avatar ?? DEFAULT_LOOK} exercise={e.id} size={104} />
+                      <Text style={[type.label, { fontSize: 10, marginTop: space.sm }]}>{t('lib.correct')}</Text>
                     </View>
                     <View style={st.visualBox}>
                       <BodyMap exercise={e.id} width={104} left={0.95} right={0.95} />
-                      <Text style={[type.label, { fontSize: 10, marginTop: space.sm }]}>Muscles worked</Text>
+                      <Text style={[type.label, { fontSize: 10, marginTop: space.sm }]}>{t('lib.muscles')}</Text>
                     </View>
                   </View>
 
-                  <Text style={[type.label, { color: colors.teal, marginTop: space.lg, marginBottom: space.sm }]}>How to</Text>
-                  {e.cues.map((c, i) => (
-                    <View key={c} style={st.listRow}>
-                      <Text style={st.num}>{i + 1}</Text>
-                      <Text style={[type.body, { flex: 1 }]}>{c}</Text>
+                  <Text style={[type.label, { color: colors.teal, marginTop: space.lg, marginBottom: space.sm }]}>{t('lib.howTo')}</Text>
+                  {[1, 2, 3, 4].map((i) => (
+                    <View key={i} style={st.listRow}>
+                      <Text style={st.num}>{i}</Text>
+                      <Text style={[type.body, { flex: 1 }]}>{t(`ex.${e.id}.c${i}`)}</Text>
                     </View>
                   ))}
 
-                  <Text style={[type.label, { color: colors.orange, marginTop: space.lg, marginBottom: space.sm }]}>Kynetic flags</Text>
-                  {e.mistakes.map((m) => (
-                    <View key={m} style={st.listRow}>
+                  <Text style={[type.label, { color: colors.orange, marginTop: space.lg, marginBottom: space.sm }]}>{t('lib.flags')}</Text>
+                  {[1, 2, 3].map((i) => (
+                    <View key={i} style={st.listRow}>
                       <Text style={[st.num, { color: colors.orange }]}>!</Text>
-                      <Text style={[type.body, { flex: 1, color: colors.textDim }]}>{m}</Text>
+                      <Text style={[type.body, { flex: 1, color: colors.textDim }]}>{t(`ex.${e.id}.m${i}`)}</Text>
                     </View>
                   ))}
 
                   {e.status !== 'soon' && (
                     <Button
-                      title={`Train ${e.short.toLowerCase()} now`}
+                      title={t('lib.train', { x: t(`ex.${e.id}.short`) })}
                       style={{ marginTop: space.lg }}
                       onPress={() => {
                         startWorkout(e.id);

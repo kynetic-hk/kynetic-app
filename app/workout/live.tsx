@@ -6,6 +6,7 @@ import { Cue, Rep, RepCounter, summariseSet } from '../../src/analysis/reps';
 import { BodyMap } from '../../src/components/BodyMap';
 import { Button } from '../../src/components/ui';
 import { exerciseById } from '../../src/data/exercises';
+import { useI18n } from '../../src/i18n';
 import { getSensorSource } from '../../src/sensors';
 import { useProfile } from '../../src/store/profile';
 import { useWorkout } from '../../src/store/workout';
@@ -16,6 +17,7 @@ const fmt = (s: number) => `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).p
 export default function Live() {
   const { exercise: exParam } = useLocalSearchParams<{ exercise?: string }>();
   const { profile } = useProfile();
+  const { t } = useI18n();
   const { active, addSet, startWorkout } = useWorkout();
   const ex = exerciseById(exParam ?? active?.exercise ?? 'bicep_curl');
   const setNo = (active?.sets.filter((s) => s.exercise === ex.id).length ?? 0) + 1;
@@ -26,7 +28,7 @@ export default function Live() {
   const [elapsed, setElapsed] = useState(0);
   const [prog, setProg] = useState({ left: 0, right: 0 });
   const [reps, setReps] = useState<Rep[]>([]);
-  const [cue, setCue] = useState<Cue>({ text: 'Get into position', tone: 'good' });
+  const [cue, setCue] = useState<Cue>({ key: 'live.position', tone: 'good' });
   const startRef = useRef(0);
 
   const pop = useRef(new Animated.Value(0)).current;
@@ -45,7 +47,7 @@ export default function Live() {
       src.startSet();
       startRef.current = Date.now();
       setRunning(true);
-      setCue({ text: 'Go! Start your first rep', tone: 'good' });
+      setCue({ key: 'live.go', tone: 'good' });
       return;
     }
     const t = setTimeout(() => setCount((c) => c - 1), 800);
@@ -95,12 +97,12 @@ export default function Live() {
     <Screen edges={['top', 'bottom']} intensity={1.35}>
       {/* header */}
       <View style={st.header}>
-        <Pressable onPress={end} hitSlop={12} accessibilityRole="button" accessibilityLabel="End set">
+        <Pressable onPress={end} hitSlop={12} accessibilityRole="button" accessibilityLabel={t('live.end')}>
           <Text style={st.close}>✕</Text>
         </Pressable>
         <View style={{ alignItems: 'center' }}>
-          <Text style={type.h3}>{ex.name}</Text>
-          <Text style={type.small}>Set {setNo}</Text>
+          <Text style={type.h3}>{t(`ex.${ex.id}.name`)}</Text>
+          <Text style={type.small}>{t('live.set', { n: setNo })}</Text>
         </View>
         <View style={st.timer}>
           <View style={[st.liveDot, running && { backgroundColor: colors.bad }]} />
@@ -110,23 +112,23 @@ export default function Live() {
 
       {!running ? (
         <View style={st.center}>
-          <Text style={[type.label, { marginBottom: space.lg }]}>Get ready</Text>
+          <Text style={[type.label, { marginBottom: space.lg }]}>{t('live.getReady')}</Text>
           <Text style={st.countdown}>{count}</Text>
-          <Text style={[type.small, { marginTop: space.lg, textAlign: 'center', maxWidth: 260 }]}>{ex.cues[0]}</Text>
+          <Text style={[type.small, { marginTop: space.lg, textAlign: 'center', maxWidth: 260 }]}>{t(`ex.${ex.id}.c1`)}</Text>
         </View>
       ) : (
         <View style={{ flex: 1, paddingHorizontal: space.xl }}>
           {/* cue */}
           <Animated.View style={[st.cue, { borderColor: cueColor, transform: [{ scale: cueAnim }] }]}>
             <View style={[st.cueDot, { backgroundColor: cueColor }]} />
-            <Text style={[type.h3, { flex: 1 }]}>{cue.text}</Text>
+            <Text style={[type.h3, { flex: 1 }]}>{t(cue.key, { side: cue.side ? t(cue.side === 'left' ? 'common.left' : 'common.right') : '' })}</Text>
           </Animated.View>
 
           {/* main: gauges + rep counter */}
           <View style={st.main}>
-            <Gauge label="L" value={prog.left} color={colors.left} />
+            <Gauge label={t('common.left')} value={prog.left} color={colors.left} top={t('live.top')} />
             <View style={{ alignItems: 'center', flex: 1 }}>
-              <Text style={type.label}>Reps</Text>
+              <Text style={type.label}>{t('live.reps')}</Text>
               <View>
                 <Text style={st.repCount}>{reps.length}</Text>
                 <Animated.Text
@@ -141,17 +143,17 @@ export default function Live() {
                   +1
                 </Animated.Text>
               </View>
-              {streak >= 2 ? <Text style={st.streak}>🔥 {streak} perfect in a row</Text> : <Text style={[st.streak, { color: 'transparent' }]}>.</Text>}
+              {streak >= 2 ? <Text style={st.streak}>{t('live.streak', { n: streak })}</Text> : <Text style={[st.streak, { color: 'transparent' }]}>.</Text>}
               <BodyMap exercise={ex.id} left={prog.left} right={prog.right} width={120} />
             </View>
-            <Gauge label="R" value={prog.right} color={colors.right} />
+            <Gauge label={t('common.right')} value={prog.right} color={colors.right} top={t('live.top')} />
           </View>
 
           {/* last rep metrics */}
           <View style={st.metrics}>
-            <Metric label="Range" value={last ? `${Math.round(Math.min(last.rom.left, last.rom.right))}%` : '—'} score={last?.romScore} />
-            <Metric label="Tempo" value={last ? `${last.duration.toFixed(1)}s` : '—'} score={last?.tempoScore} />
-            <Metric label="Form" value={last ? `${Math.round(last.formScore)}` : '—'} score={last?.formScore} />
+            <Metric label={t('live.range')} value={last ? `${Math.round(Math.min(last.rom.left, last.rom.right))}%` : '—'} score={last?.romScore} />
+            <Metric label={t('live.tempo')} value={last ? `${last.duration.toFixed(1)}s` : '—'} score={last?.tempoScore} />
+            <Metric label={t('live.form')} value={last ? `${Math.round(last.formScore)}` : '—'} score={last?.formScore} />
           </View>
 
           {/* rep timeline */}
@@ -166,14 +168,14 @@ export default function Live() {
       )}
 
       <View style={{ paddingHorizontal: space.xl, paddingBottom: space.md }}>
-        <Button title={running ? 'End set' : 'Skip countdown'} variant={running ? 'primary' : 'secondary'} onPress={running ? end : () => setCount(0)} />
+        <Button title={t(running ? 'live.end' : 'live.skipCountdown')} variant={running ? 'primary' : 'secondary'} onPress={running ? end : () => setCount(0)} />
       </View>
     </Screen>
   );
 }
 
 /** Vertical range-of-motion gauge with a target zone at the top. */
-function Gauge({ label, value, color }: { label: string; value: number; color: string }) {
+function Gauge({ label, value, color, top }: { label: string; value: number; color: string; top: string }) {
   const H = 280;
   const inZone = value >= 0.9;
   const fill = Math.min(1.1, value) / 1.1;
@@ -181,7 +183,7 @@ function Gauge({ label, value, color }: { label: string; value: number; color: s
     <View style={{ alignItems: 'center', width: 54 }}>
       <View style={[st.gauge, { height: H }]}>
         <View style={[st.zone, { height: H * (0.2 / 1.1) }, inZone && { backgroundColor: 'rgba(48,186,186,0.35)', borderColor: colors.teal }]}>
-          <Text style={[st.zoneText, inZone && { color: colors.teal }]}>TOP</Text>
+          <Text style={[st.zoneText, inZone && { color: colors.teal }]}>{top}</Text>
         </View>
         <View style={[st.fill, { height: H * fill, backgroundColor: color }]} />
       </View>

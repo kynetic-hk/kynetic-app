@@ -1,5 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import React, { createContext, useCallback, useContext, useEffect, useState } from 'react';
+import type { AvatarLook } from '../components/Avatar';
 
 export type Experience = 'beginner' | 'intermediate' | 'advanced';
 export type Goal = 'build_muscle' | 'fix_form' | 'prevent_injury' | 'fix_imbalances' | 'get_stronger';
@@ -13,7 +14,8 @@ export interface Profile {
   dominantArm: Side;
   experience: Experience;
   goals: Goal[];
-  injuries: string[]; // body areas, e.g. 'shoulder', 'elbow'
+  injuries: string[]; // body area ids, e.g. 'shoulder', 'lower_back'
+  avatar?: AvatarLook;
   injuryNotes?: string;
   pairedSensors: string[]; // sensor ids, e.g. 'L_FOREARM'
   calibratedAt?: string; // ISO date

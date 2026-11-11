@@ -1,6 +1,7 @@
 import { DarkTheme, Stack, ThemeProvider } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { I18nProvider } from '../src/i18n';
 import { ProfileProvider } from '../src/store/profile';
 import { WorkoutProvider } from '../src/store/workout';
 import { colors } from '../src/theme';
@@ -14,6 +15,7 @@ export default function RootLayout() {
   return (
     <SafeAreaProvider>
       <ThemeProvider value={theme}>
+        <I18nProvider>
         <ProfileProvider>
           <WorkoutProvider>
             <StatusBar style="light" />
@@ -23,6 +25,7 @@ export default function RootLayout() {
             </Stack>
           </WorkoutProvider>
         </ProfileProvider>
+        </I18nProvider>
       </ThemeProvider>
     </SafeAreaProvider>
   );

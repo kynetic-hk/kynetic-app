@@ -14,7 +14,8 @@ export interface Rep {
   cue: Cue;
 }
 
-export type Cue = { text: string; tone: 'good' | 'warn' | 'bad' };
+/** A coaching cue: `key` is an i18n string key; `side` fills {side} when present. */
+export type Cue = { key: string; tone: 'good' | 'warn' | 'bad'; side?: 'left' | 'right' };
 
 const clamp = (x: number, a = 0, b = 100) => Math.max(a, Math.min(b, x));
 
@@ -90,12 +91,12 @@ export class RepCounter {
     const asym = Math.abs(romL - romR);
     const formScore = clamp(100 - over * 3.5 * this.strict - Math.max(0, asym - 6) * 1.5);
 
-    let cue: Cue = { text: 'Great rep!', tone: 'good' };
-    if (romScore < 75) cue = { text: this.ex.id === 'lateral_raise' ? 'Raise to shoulder height' : 'Go all the way up', tone: 'bad' };
-    else if (formScore < 75) cue = { text: this.ex.id === 'lateral_raise' ? 'Keep a fixed elbow bend' : 'Keep your elbows pinned', tone: 'bad' };
-    else if (duration < lo) cue = { text: 'Slow down on the way down', tone: 'warn' };
-    else if (duration > hi) cue = { text: 'A little quicker', tone: 'warn' };
-    else if (asym > 6) cue = { text: `${romL < romR ? 'Left' : 'Right'} arm is lagging`, tone: 'warn' };
+    let cue: Cue = { key: 'cue.great', tone: 'good' };
+    if (romScore < 75) cue = { key: this.ex.id === 'lateral_raise' ? 'cue.shoulderHeight' : 'cue.fullRange', tone: 'bad' };
+    else if (formScore < 75) cue = { key: this.ex.id === 'lateral_raise' ? 'cue.fixedElbow' : 'cue.elbowsPinned', tone: 'bad' };
+    else if (duration < lo) cue = { key: 'cue.slowDown', tone: 'warn' };
+    else if (duration > hi) cue = { key: 'cue.quicker', tone: 'warn' };
+    else if (asym > 6) cue = { key: 'cue.lagging', tone: 'warn', side: romL < romR ? 'left' : 'right' };
 
     const rep: Rep = { index: this.reps.length + 1, duration, rom: { left: romL, right: romR }, swing, romScore, tempoScore, formScore, cue };
     this.reps.push(rep);
@@ -130,13 +131,14 @@ export function summariseSet(ex: Exercise, reps: Rep[], durationSec: number): Se
   };
 }
 
-/** One-line coaching tip for the end of a set. */
-export function setTip(s: SetResult): string {
+/** One-line coaching tip for the end of a set, as an i18n key (+ side for {side}). */
+export function setTip(s: SetResult): { key: string; side?: 'left' | 'right' } {
+  const weak = s.balance.left < s.balance.right ? 'left' : 'right';
   const worst = [
-    { k: 'rom', v: s.rom, t: 'Focus on full range — finish every rep at the top.' },
-    { k: 'tempo', v: s.tempo, t: 'Slow the lowering phase to about 2 seconds.' },
-    { k: 'form', v: s.form, t: 'Keep the rest of your body still — no swinging.' },
-    { k: 'bal', v: 100 - Math.abs(s.balance.left - s.balance.right) * 4, t: `Let your ${s.balance.left < s.balance.right ? 'left' : 'right'} arm lead next set.` },
+    { key: 'tip.rom', v: s.rom },
+    { key: 'tip.tempo', v: s.tempo },
+    { key: 'tip.form', v: s.form },
+    { key: 'tip.bal', v: 100 - Math.abs(s.balance.left - s.balance.right) * 4, side: weak as 'left' | 'right' },
   ].sort((a, b) => a.v - b.v)[0];
-  return worst.v >= 88 ? 'Excellent set. Keep the same weight and match it next set.' : worst.t;
+  return worst.v >= 88 ? { key: 'tip.excellent' } : worst;
 }

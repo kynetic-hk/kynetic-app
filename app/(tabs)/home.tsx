@@ -2,27 +2,31 @@ import { router } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Screen } from '../../src/components/Screen';
+import { Avatar, DEFAULT_LOOK } from '../../src/components/Avatar';
 import { PlayIcon, PodIcon } from '../../src/components/icons';
 import { Card, ScoreRing } from '../../src/components/ui';
 import { exerciseById } from '../../src/data/exercises';
 import { Session, sessionBalance, sessionScore } from '../../src/data/sessions';
+import { sessionTitle, TFn, useI18n } from '../../src/i18n';
 import { getSensorSource, SensorInfo } from '../../src/sensors';
 import { useProfile } from '../../src/store/profile';
 import { useWorkout } from '../../src/store/workout';
 import { colors, radius, scoreColor, space, type } from '../../src/theme';
 
-const greeting = () => {
+const greeting = (t: TFn) => {
   const h = new Date().getHours();
-  return h < 12 ? 'Good morning' : h < 18 ? 'Good afternoon' : 'Good evening';
+  return t(h < 12 ? 'home.morning' : h < 18 ? 'home.afternoon' : 'home.evening');
 };
 
-const dayLabel = (iso: string) => {
+const dayLabel = (iso: string, t: TFn) => {
   const d = Math.round((Date.now() - new Date(iso).getTime()) / 86400000);
-  return d <= 0 ? 'Today' : d === 1 ? 'Yesterday' : `${d} days ago`;
+  return d <= 0 ? t('home.today') : d === 1 ? t('home.yesterday') : t('home.daysAgo', { n: d });
 };
+
 
 export default function Home() {
   const { profile } = useProfile();
+  const { t } = useI18n();
   const [sensors, setSensors] = useState<SensorInfo[]>([]);
   useEffect(() => getSensorSource().subscribe((e) => e.type === 'status' && setSensors(e.sensors)), []);
 
@@ -42,22 +46,27 @@ export default function Home() {
       <ScrollView contentContainerStyle={st.page}>
         {/* header */}
         <View style={st.header}>
-          <View>
-            <Text style={type.small}>{greeting()},</Text>
-            <Text style={type.h1}>{first} 👋</Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: space.md }}>
+            <View style={st.avatarRing}>
+              <Avatar look={profile?.avatar ?? DEFAULT_LOOK} headOnly size={46} />
+            </View>
+            <View>
+              <Text style={type.small}>{greeting(t)}</Text>
+              <Text style={type.h1}>{first}</Text>
+            </View>
           </View>
           <View style={[st.podPill, connected > 0 && { borderColor: colors.good }]}>
             <PodIcon color={connected > 0 ? colors.good : colors.textMute} size={16} />
-            <Text style={[st.podText, connected > 0 && { color: colors.good }]}>{connected > 0 ? `${connected}/5` : 'Off'}</Text>
+            <Text style={[st.podText, connected > 0 && { color: colors.good }]}>{connected > 0 ? `${connected}/5` : t('home.podsOff')}</Text>
           </View>
         </View>
 
         {/* start workout */}
         <Pressable accessibilityRole="button" onPress={() => router.push('/workout/choose')} style={({ pressed }) => [st.start, pressed && { opacity: 0.9, transform: [{ scale: 0.99 }] }]}>
           <View style={{ flex: 1 }}>
-            <Text style={[type.label, { color: '#202020B3' }]}>Ready when you are</Text>
-            <Text style={st.startTitle}>Start workout</Text>
-            <Text style={{ color: '#202020B3', fontSize: 14, marginTop: 2 }}>Pick an exercise and get coached live</Text>
+            <Text style={[type.label, { color: '#202020B3' }]}>{t('home.start.kicker')}</Text>
+            <Text style={st.startTitle}>{t('home.start.title')}</Text>
+            <Text style={{ color: '#202020B3', fontSize: 14, marginTop: 2 }}>{t('home.start.sub')}</Text>
           </View>
           <View style={st.playBtn}>
             <PlayIcon color={colors.orange} size={22} />
@@ -67,27 +76,25 @@ export default function Home() {
         {/* last session + balance */}
         <View style={{ flexDirection: 'row', gap: space.md }}>
           <Card style={{ flex: 1, alignItems: 'center' }}>
-            <Text style={[type.label, { alignSelf: 'flex-start' }]}>Last session</Text>
+            <Text style={[type.label, { alignSelf: 'flex-start' }]}>{t('home.last')}</Text>
             <View style={{ marginVertical: space.md }}>
-              <ScoreRing score={lastScore} size={104} label="score" />
+              <ScoreRing score={lastScore} size={104} label={t('common.score')} />
             </View>
             <Text style={[type.small, { color: delta >= 0 ? colors.good : colors.bad, fontWeight: '700' }]}>
-              {delta >= 0 ? '▲' : '▼'} {Math.abs(delta)} vs last time
+              {t('home.vsLast', { n: `${delta >= 0 ? '▲' : '▼'} ${Math.abs(delta)}` })}
             </Text>
           </Card>
 
           <Card style={{ flex: 1 }}>
-            <Text style={type.label}>L / R balance</Text>
+            <Text style={type.label}>{t('home.balance')}</Text>
             <View style={st.balWrap}>
-              <BalanceBar left={bal.left} right={bal.right} />
+              <BalanceBar left={bal.left} right={bal.right} t={t} />
             </View>
             <Text style={type.small}>
               {gap <= 4 ? (
-                <Text style={{ color: colors.good, fontWeight: '700' }}>Nicely balanced</Text>
+                <Text style={{ color: colors.good, fontWeight: '700' }}>{t('home.balanced')}</Text>
               ) : (
-                <>
-                  Your <Text style={{ color: colors.orange, fontWeight: '700' }}>{weaker}</Text> side is doing {gap}% less work
-                </>
+                t('home.weaker', { side: t(weaker === 'left' ? 'common.leftLower' : 'common.rightLower'), n: gap })
               )}
             </Text>
           </Card>
@@ -96,27 +103,27 @@ export default function Home() {
         {/* weekly strip */}
         <Card style={{ marginTop: space.md }}>
           <View style={st.rowBetween}>
-            <Text style={type.label}>This week</Text>
-            <Text style={type.small}>{sessions.length} sessions</Text>
+            <Text style={type.label}>{t('home.week')}</Text>
+            <Text style={type.small}>{t('home.nSessions', { n: sessions.length })}</Text>
           </View>
-          <WeekStrip sessions={sessions} />
+          <WeekStrip sessions={sessions} t={t} />
         </Card>
 
         {/* recent */}
-        <Text style={[type.h2, { marginTop: space.xl, marginBottom: space.md }]}>Recent sessions</Text>
+        <Text style={[type.h2, { marginTop: space.xl, marginBottom: space.md }]}>{t('home.recent')}</Text>
         {sessions.map((s) => (
-          <SessionRow key={s.id} s={s} />
+          <SessionRow key={s.id} s={s} t={t} />
         ))}
 
         {realCount < 2 ? (
-          <Text style={[type.small, { textAlign: 'center', marginTop: space.lg, color: colors.textMute }]}>Includes demo sessions until you've logged two workouts</Text>
+          <Text style={[type.small, { textAlign: 'center', marginTop: space.lg, color: colors.textMute }]}>{t('home.demoNote')}</Text>
         ) : null}
       </ScrollView>
     </Screen>
   );
 }
 
-function BalanceBar({ left, right }: { left: number; right: number }) {
+function BalanceBar({ left, right, t }: { left: number; right: number; t: TFn }) {
   return (
     <View>
       <View style={st.rowBetween}>
@@ -129,15 +136,15 @@ function BalanceBar({ left, right }: { left: number; right: number }) {
         <View style={{ flex: right, backgroundColor: colors.right, borderTopRightRadius: 4, borderBottomRightRadius: 4 }} />
       </View>
       <View style={[st.rowBetween, { marginTop: 4 }]}>
-        <Text style={[type.label, { fontSize: 10 }]}>Left</Text>
-        <Text style={[type.label, { fontSize: 10 }]}>Right</Text>
+        <Text style={[type.label, { fontSize: 10 }]}>{t('common.left')}</Text>
+        <Text style={[type.label, { fontSize: 10 }]}>{t('common.right')}</Text>
       </View>
     </View>
   );
 }
 
-function WeekStrip({ sessions }: { sessions: Session[] }) {
-  const days = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
+function WeekStrip({ sessions, t }: { sessions: Session[]; t: TFn }) {
+  const days = t('home.days').split(',');
   const today = (new Date().getDay() + 6) % 7; // Monday = 0
   const done = new Set(
     sessions
@@ -158,24 +165,24 @@ function WeekStrip({ sessions }: { sessions: Session[] }) {
   );
 }
 
-function SessionRow({ s }: { s: Session }) {
+function SessionRow({ s, t }: { s: Session; t: TFn }) {
   const score = sessionScore(s);
-  const names = [...new Set(s.sets.map((x) => exerciseById(x.exercise).name))].join(' · ');
+  const names = [...new Set(s.sets.map((x) => t(`ex.${exerciseById(x.exercise).id}.name`)))].join(' · ');
   return (
     <Pressable accessibilityRole="button" onPress={() => router.push(`/session/${s.id}`)} style={({ pressed }) => [st.sessionRow, pressed && { backgroundColor: colors.surfaceHigh }]}>
       <View style={[st.scoreBadge, { borderColor: scoreColor(score) }]}>
         <Text style={[type.h3, { color: scoreColor(score) }]}>{score}</Text>
       </View>
       <View style={{ flex: 1 }}>
-        <Text style={type.h3}>{s.title}</Text>
+        <Text style={type.h3}>{sessionTitle(s.title, t)}</Text>
         <Text style={type.small} numberOfLines={1}>
           {names}
         </Text>
       </View>
       <View style={{ alignItems: 'flex-end' }}>
-        <Text style={type.small}>{dayLabel(s.date)}</Text>
+        <Text style={type.small}>{dayLabel(s.date, t)}</Text>
         <Text style={[type.small, { color: colors.textMute }]}>
-          {s.sets.length} sets · {s.durationMin}m
+          {t('home.setsMin', { sets: s.sets.length, min: s.durationMin })}
         </Text>
       </View>
     </Pressable>
@@ -196,6 +203,7 @@ const st = StyleSheet.create({
     borderColor: colors.border,
     backgroundColor: colors.surface,
   },
+  avatarRing: { width: 54, height: 54, borderRadius: 27, backgroundColor: colors.surfaceHigh, alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: colors.orange, overflow: 'hidden' },
   podText: { color: colors.textMute, fontWeight: '700', fontSize: 13 },
   start: {
     flexDirection: 'row',

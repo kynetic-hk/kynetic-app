@@ -1,31 +1,30 @@
 import { router } from 'expo-router';
 import React, { useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Avatar, AvatarLook, DEFAULT_LOOK, useLoop } from '../../src/components/Avatar';
+import { AvatarBuilder } from '../../src/components/AvatarBuilder';
+import { LanguagePicker } from '../../src/components/LanguagePicker';
 import { Screen } from '../../src/components/Screen';
 import { Button, Chip, Field, OptionCard, ProgressDots, Wordmark } from '../../src/components/ui';
+import { useI18n } from '../../src/i18n';
 import { getSensorSource, SENSOR_LAYOUT, SensorId, SensorInfo } from '../../src/sensors';
 import { Experience, Goal, Profile, Side, useProfile } from '../../src/store/profile';
 import { colors, radius, space, type } from '../../src/theme';
 
-const STEPS = ['welcome', 'name', 'basics', 'experience', 'goals', 'injuries', 'pair', 'calibrate', 'done'] as const;
+const STEPS = ['welcome', 'name', 'avatar', 'basics', 'experience', 'goals', 'injuries', 'pair', 'calibrate', 'done'] as const;
 type Step = (typeof STEPS)[number];
 
-const GOALS: { id: Goal; label: string }[] = [
-  { id: 'fix_form', label: 'Perfect my form' },
-  { id: 'build_muscle', label: 'Build muscle' },
-  { id: 'get_stronger', label: 'Get stronger' },
-  { id: 'fix_imbalances', label: 'Fix left/right imbalances' },
-  { id: 'prevent_injury', label: 'Avoid injury' },
-];
-const AREAS = ['Shoulder', 'Elbow', 'Wrist', 'Lower back', 'Neck', 'Knee'];
+const GOALS: Goal[] = ['fix_form', 'build_muscle', 'get_stronger', 'fix_imbalances', 'prevent_injury'];
+export const AREAS = ['shoulder', 'elbow', 'wrist', 'lower_back', 'neck', 'knee'];
 
 export default function Onboarding() {
   const { save } = useProfile();
+  const { t } = useI18n();
   const [i, setI] = useState(0);
   const step: Step = STEPS[i];
 
-  // form state
   const [name, setName] = useState('');
+  const [look, setLook] = useState<AvatarLook>(DEFAULT_LOOK);
   const [age, setAge] = useState('');
   const [height, setHeight] = useState('');
   const [weight, setWeight] = useState('');
@@ -56,6 +55,7 @@ export default function Onboarding() {
   const finish = async () => {
     const p: Profile = {
       name: name.trim(),
+      avatar: look,
       age: num(age),
       heightCm: num(height),
       weightKg: num(weight),
@@ -79,7 +79,7 @@ export default function Onboarding() {
     <Screen edges={['top', 'bottom']}>
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         <View style={st.top}>
-          <Pressable onPress={back} hitSlop={12} accessibilityRole="button" accessibilityLabel="Back">
+          <Pressable onPress={back} hitSlop={12} accessibilityRole="button" accessibilityLabel={t('common.back')}>
             <Text style={st.back}>‹</Text>
           </Pressable>
           <ProgressDots step={i - 1} total={STEPS.length - 2} />
@@ -89,53 +89,69 @@ export default function Onboarding() {
         <ScrollView contentContainerStyle={st.body} keyboardShouldPersistTaps="handled">
           {step === 'name' && (
             <>
-              <Title kicker="Let's set you up" title="What should we call you?" />
-              <Field label="Your name" value={name} onChangeText={setName} placeholder="e.g. Alex" autoFocus autoCapitalize="words" returnKeyType="next" onSubmitEditing={() => canContinue && next()} />
+              <Title kicker={t('onb.name.kicker')} title={t('onb.name.title')} />
+              <Field
+                label={t('onb.name.field')}
+                value={name}
+                onChangeText={setName}
+                placeholder={t('onb.name.placeholder')}
+                autoFocus
+                autoCapitalize="words"
+                returnKeyType="next"
+                onSubmitEditing={() => canContinue && next()}
+              />
+            </>
+          )}
+
+          {step === 'avatar' && (
+            <>
+              <Title kicker={t('onb.avatar.kicker')} title={t('onb.avatar.title')} sub={t('onb.avatar.sub')} />
+              <AvatarBuilder look={look} onChange={setLook} />
             </>
           )}
 
           {step === 'basics' && (
             <>
-              <Title kicker={`Nice to meet you, ${first}`} title="A few basics" sub="Helps us scale your targets. You can skip any of these." />
+              <Title kicker={t('onb.basics.kicker', { name: first })} title={t('onb.basics.title')} sub={t('onb.basics.sub')} />
               <View style={{ flexDirection: 'row', gap: space.md }}>
                 <View style={{ flex: 1 }}>
-                  <Field label="Age" value={age} onChangeText={setAge} keyboardType="number-pad" placeholder="—" maxLength={3} />
+                  <Field label={t('onb.basics.age')} value={age} onChangeText={setAge} keyboardType="number-pad" placeholder="—" maxLength={3} />
                 </View>
                 <View style={{ flex: 1 }}>
-                  <Field label="Height (cm)" value={height} onChangeText={setHeight} keyboardType="number-pad" placeholder="—" maxLength={3} />
+                  <Field label={t('onb.basics.height')} value={height} onChangeText={setHeight} keyboardType="number-pad" placeholder="—" maxLength={3} />
                 </View>
                 <View style={{ flex: 1 }}>
-                  <Field label="Weight (kg)" value={weight} onChangeText={setWeight} keyboardType="decimal-pad" placeholder="—" maxLength={5} />
+                  <Field label={t('onb.basics.weight')} value={weight} onChangeText={setWeight} keyboardType="decimal-pad" placeholder="—" maxLength={5} />
                 </View>
               </View>
-              <Text style={[type.label, { marginBottom: space.sm, marginTop: space.sm }]}>Dominant arm</Text>
+              <Text style={[type.label, { marginBottom: space.sm, marginTop: space.sm }]}>{t('onb.basics.dominant')}</Text>
               <View style={{ flexDirection: 'row', gap: space.md }}>
                 <View style={{ flex: 1 }}>
-                  <OptionCard title="Left" selected={dominant === 'left'} onPress={() => setDominant('left')} />
+                  <OptionCard title={t('common.left')} selected={dominant === 'left'} onPress={() => setDominant('left')} />
                 </View>
                 <View style={{ flex: 1 }}>
-                  <OptionCard title="Right" selected={dominant === 'right'} onPress={() => setDominant('right')} />
+                  <OptionCard title={t('common.right')} selected={dominant === 'right'} onPress={() => setDominant('right')} />
                 </View>
               </View>
-              <Text style={type.small}>We use this to compare your left and right side fairly.</Text>
+              <Text style={type.small}>{t('onb.basics.dominantNote')}</Text>
             </>
           )}
 
           {step === 'experience' && (
             <>
-              <Title kicker="Training" title="How long have you been lifting?" sub="This sets how strict your form feedback is." />
-              <OptionCard title="Beginner" subtitle="Less than 6 months, still learning the moves" selected={experience === 'beginner'} onPress={() => setExperience('beginner')} />
-              <OptionCard title="Intermediate" subtitle="6 months – 2 years, training regularly" selected={experience === 'intermediate'} onPress={() => setExperience('intermediate')} />
-              <OptionCard title="Advanced" subtitle="2+ years, chasing the details" selected={experience === 'advanced'} onPress={() => setExperience('advanced')} />
+              <Title kicker={t('onb.exp.kicker')} title={t('onb.exp.title')} sub={t('onb.exp.sub')} />
+              {(['beginner', 'intermediate', 'advanced'] as Experience[]).map((x) => (
+                <OptionCard key={x} title={t(`exp.${x}`)} subtitle={t(`onb.exp.${x}Sub`)} selected={experience === x} onPress={() => setExperience(x)} />
+              ))}
             </>
           )}
 
           {step === 'goals' && (
             <>
-              <Title kicker="Goals" title="What do you want from Kynetic?" sub="Pick as many as you like." />
+              <Title kicker={t('onb.goals.kicker')} title={t('onb.goals.title')} sub={t('onb.goals.sub')} />
               <View style={st.chips}>
                 {GOALS.map((g) => (
-                  <Chip key={g.id} label={g.label} selected={goals.includes(g.id)} onPress={() => setGoals((l) => toggle(l, g.id))} />
+                  <Chip key={g} label={t(`goal.${g}`)} selected={goals.includes(g)} onPress={() => setGoals((l) => toggle(l, g))} />
                 ))}
               </View>
             </>
@@ -143,44 +159,35 @@ export default function Onboarding() {
 
           {step === 'injuries' && (
             <>
-              <Title kicker="Safety" title="Any areas to be careful with?" sub="Past or current injuries. We'll keep an eye on these." />
+              <Title kicker={t('onb.inj.kicker')} title={t('onb.inj.title')} sub={t('onb.inj.sub')} />
               <View style={st.chips}>
                 {AREAS.map((a) => (
-                  <Chip key={a} label={a} selected={injuries.includes(a)} onPress={() => setInjuries((l) => toggle(l, a))} />
+                  <Chip key={a} label={t(`area.${a}`)} selected={injuries.includes(a)} onPress={() => setInjuries((l) => toggle(l, a))} />
                 ))}
               </View>
-              <Text style={[type.small, { marginTop: space.lg }]}>{injuries.length ? `Noted: ${injuries.join(', ')}` : 'None? Just continue.'}</Text>
+              <Text style={[type.small, { marginTop: space.lg }]}>
+                {injuries.length ? t('onb.inj.noted', { list: injuries.map((a) => t(`area.${a}`)).join(', ') }) : t('onb.inj.none')}
+              </Text>
             </>
           )}
 
           {step === 'pair' && <Pair paired={paired} setPaired={setPaired} />}
 
-          {step === 'calibrate' && <Calibrate done={calibrated} onDone={() => setCalibrated(true)} />}
+          {step === 'calibrate' && <Calibrate look={look} done={calibrated} onDone={() => setCalibrated(true)} />}
 
-          {step === 'done' && (
-            <View style={{ alignItems: 'flex-start', paddingTop: space.xxl }}>
-              <View style={st.bigCheck}>
-                <Text style={{ fontSize: 40, color: colors.bg, fontWeight: '900' }}>✓</Text>
-              </View>
-              <Title kicker="All set" title={`You're ready, ${first}.`} sub="Pick an exercise, start your set and Kynetic will coach your form rep by rep." />
-            </View>
-          )}
+          {step === 'done' && <Done look={look} name={first} />}
         </ScrollView>
 
         <View style={st.footer}>
           {step === 'done' ? (
-            <Button title="Go to Home" onPress={finish} />
+            <Button title={t('onb.done.go')} onPress={finish} />
           ) : step === 'pair' || step === 'calibrate' ? (
             <>
-              <Button
-                title="Continue"
-                onPress={next}
-                disabled={step === 'pair' ? paired.length === 0 : !calibrated}
-              />
-              <Button title="Skip for now" variant="ghost" onPress={next} />
+              <Button title={t('common.continue')} onPress={next} disabled={step === 'pair' ? paired.length === 0 : !calibrated} />
+              <Button title={t('common.skip')} variant="ghost" onPress={next} />
             </>
           ) : (
-            <Button title="Continue" onPress={next} disabled={!canContinue} />
+            <Button title={t('common.continue')} onPress={next} disabled={!canContinue} />
           )}
         </View>
       </KeyboardAvoidingView>
@@ -204,27 +211,36 @@ function Title({ kicker, title, sub }: { kicker?: string; title: string; sub?: s
 }
 
 function Welcome({ onStart }: { onStart: () => void }) {
+  const { t } = useI18n();
+  const k = useLoop(1600);
   return (
     <Screen edges={['top', 'bottom']}>
       <View style={st.welcome}>
-        <Wordmark size={20} />
-        <View>
-          <View style={st.glow} />
-          <Text style={type.display}>
-            Your personal{'\n'}trainer,{'\n'}
-            <Text style={{ color: colors.orange }}>on your arm.</Text>
-          </Text>
-          <Text style={[type.body, { color: colors.textDim, marginTop: space.lg, maxWidth: 320 }]}>
-            Real-time form tracking, rep scoring and left/right balance from sensors you wear.
-          </Text>
+        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+          <Wordmark size={20} />
+          <LanguagePicker />
         </View>
-        <Button title="Get started" onPress={onStart} />
+        <View>
+          <View style={{ alignItems: 'flex-end', marginBottom: space.sm }}>
+            <Avatar pose="wave" k={k} size={100} look={{ ...DEFAULT_LOOK, hair: 5 }} />
+          </View>
+          <Text style={type.display}>
+            {t('welcome.hero1')}
+            {'\n'}
+            {t('welcome.hero2')}
+            {'\n'}
+            <Text style={{ color: colors.orange }}>{t('welcome.hero3')}</Text>
+          </Text>
+          <Text style={[type.body, { color: colors.textDim, marginTop: space.lg, maxWidth: 320 }]}>{t('welcome.sub')}</Text>
+        </View>
+        <Button title={t('welcome.start')} onPress={onStart} />
       </View>
     </Screen>
   );
 }
 
 function Pair({ paired, setPaired }: { paired: SensorId[]; setPaired: (p: SensorId[]) => void }) {
+  const { t } = useI18n();
   const [phase, setPhase] = useState<'idle' | 'scanning' | 'found' | 'connecting' | 'connected'>(paired.length ? 'connected' : 'idle');
   const [found, setFound] = useState<SensorInfo[]>([]);
 
@@ -241,15 +257,16 @@ function Pair({ paired, setPaired }: { paired: SensorId[]; setPaired: (p: Sensor
     setPaired(ids);
     setPhase('connected');
   };
+  const place = (id: SensorId) => t(id === 'HUB' ? 'place.HUB' : id.endsWith('UPPER') ? 'place.UPPER' : 'place.FOREARM');
 
   return (
     <>
-      <Title kicker="Sensors" title="Pair your Kynetic pods" sub="Turn on all pods and keep them close to your phone." />
-      {phase === 'idle' && <Button title="Scan for pods" variant="secondary" onPress={scan} />}
+      <Title kicker={t('onb.pair.kicker')} title={t('onb.pair.title')} sub={t('onb.pair.sub')} />
+      {phase === 'idle' && <Button title={t('onb.pair.scan')} variant="secondary" onPress={scan} />}
       {phase === 'scanning' && (
         <View style={st.scanBox}>
           <ActivityIndicator color={colors.orange} />
-          <Text style={[type.small, { marginTop: space.md }]}>Looking for pods…</Text>
+          <Text style={[type.small, { marginTop: space.md }]}>{t('onb.pair.looking')}</Text>
         </View>
       )}
       {(phase === 'found' || phase === 'connecting' || phase === 'connected') && (
@@ -260,14 +277,14 @@ function Pair({ paired, setPaired }: { paired: SensorId[]; setPaired: (p: Sensor
               <View key={s.id} style={st.podRow}>
                 <View style={[st.podDot, ok && { backgroundColor: colors.good }]} />
                 <View style={{ flex: 1 }}>
-                  <Text style={type.h3}>{s.label}</Text>
-                  <Text style={type.small}>{s.placement}</Text>
+                  <Text style={type.h3}>{t(`sensor.${s.id}`)}</Text>
+                  <Text style={type.small}>{place(s.id)}</Text>
                 </View>
                 {s.battery ? <Text style={type.small}>{s.battery}%</Text> : null}
               </View>
             );
           })}
-          {phase === 'found' && <Button title={`Connect ${found.length} pods`} onPress={connect} style={{ marginTop: space.md }} />}
+          {phase === 'found' && <Button title={t('onb.pair.connect', { n: found.length })} onPress={connect} style={{ marginTop: space.md }} />}
           {phase === 'connecting' && <ActivityIndicator color={colors.orange} style={{ marginTop: space.lg }} />}
         </>
       )}
@@ -275,7 +292,8 @@ function Pair({ paired, setPaired }: { paired: SensorId[]; setPaired: (p: Sensor
   );
 }
 
-function Calibrate({ done, onDone }: { done: boolean; onDone: () => void }) {
+function Calibrate({ look, done, onDone }: { look: AvatarLook; done: boolean; onDone: () => void }) {
+  const { t } = useI18n();
   const [running, setRunning] = useState(false);
   const [count, setCount] = useState(3);
 
@@ -291,24 +309,26 @@ function Calibrate({ done, onDone }: { done: boolean; onDone: () => void }) {
         });
       return;
     }
-    const t = setTimeout(() => setCount((c) => c - 1), 1000);
-    return () => clearTimeout(t);
+    const tm = setTimeout(() => setCount((c) => c - 1), 1000);
+    return () => clearTimeout(tm);
   }, [running, count, onDone]);
 
   return (
     <>
-      <Title kicker="Calibration" title="Stand in the neutral pose" sub="Stand tall, arms relaxed by your sides, palms facing forward. Hold still for 3 seconds." />
+      <Title kicker={t('onb.cal.kicker')} title={t('onb.cal.title')} sub={t('onb.cal.sub')} />
       <View style={st.poseBox}>
-        <Text style={{ fontSize: 72 }}>🧍</Text>
-        {running ? (
-          <Text style={[type.display, { color: colors.orange, marginTop: space.md }]}>{count || 'Hold…'}</Text>
-        ) : done ? (
-          <Text style={[type.h2, { color: colors.good, marginTop: space.md }]}>Calibrated ✓</Text>
-        ) : null}
+        <Avatar look={look} pose="stand" size={110} pods />
+        <View style={st.poseStatus}>
+          {running ? (
+            <Text style={[type.display, { color: colors.orange }]}>{count || t('onb.cal.hold')}</Text>
+          ) : done ? (
+            <Text style={[type.h2, { color: colors.good }]}>{t('onb.cal.done')}</Text>
+          ) : null}
+        </View>
       </View>
       {!running && !done && (
         <Button
-          title="Start calibration"
+          title={t('onb.cal.start')}
           variant="secondary"
           onPress={() => {
             setCount(3);
@@ -320,24 +340,26 @@ function Calibrate({ done, onDone }: { done: boolean; onDone: () => void }) {
   );
 }
 
+function Done({ look, name }: { look: AvatarLook; name: string }) {
+  const { t } = useI18n();
+  const k = useLoop(1400);
+  return (
+    <View style={{ alignItems: 'center', paddingTop: space.lg }}>
+      <Avatar look={look} pose="flex" k={k} size={130} />
+      <View style={{ alignSelf: 'stretch', marginTop: space.xl }}>
+        <Title kicker={t('onb.done.kicker')} title={t('onb.done.title', { name })} sub={t('onb.done.sub')} />
+      </View>
+    </View>
+  );
+}
+
 const st = StyleSheet.create({
-  safe: { flex: 1 },
   top: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: space.xl, paddingVertical: space.md },
   back: { color: colors.text, fontSize: 34, lineHeight: 34, fontWeight: '300' },
   body: { paddingHorizontal: space.xl, paddingTop: space.xl, paddingBottom: space.xxl },
   footer: { paddingHorizontal: space.xl, paddingBottom: space.md, gap: space.xs },
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: space.sm },
   welcome: { flex: 1, padding: space.xl, justifyContent: 'space-between' },
-  glow: {
-    position: 'absolute',
-    width: 260,
-    height: 260,
-    borderRadius: 130,
-    backgroundColor: colors.orange,
-    opacity: 0.12,
-    top: -60,
-    left: -40,
-  },
   scanBox: { alignItems: 'center', padding: space.xxl, borderRadius: radius.lg, backgroundColor: colors.surface },
   podRow: {
     flexDirection: 'row',
@@ -351,6 +373,15 @@ const st = StyleSheet.create({
     borderColor: colors.border,
   },
   podDot: { width: 10, height: 10, borderRadius: 5, backgroundColor: colors.textMute },
-  poseBox: { alignItems: 'center', justifyContent: 'center', height: 260, borderRadius: radius.lg, backgroundColor: colors.surface, marginBottom: space.lg },
-  bigCheck: { width: 80, height: 80, borderRadius: 40, backgroundColor: colors.orange, alignItems: 'center', justifyContent: 'center', marginBottom: space.xl },
+  poseBox: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: space.xl,
+    paddingVertical: space.lg,
+    borderRadius: radius.lg,
+    backgroundColor: colors.surface,
+    marginBottom: space.lg,
+  },
+  poseStatus: { minWidth: 110, alignItems: 'center' },
 });

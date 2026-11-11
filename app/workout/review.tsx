@@ -6,6 +6,7 @@ import { setTip } from '../../src/analysis/reps';
 import { Button, ScoreRing } from '../../src/components/ui';
 import { exerciseById } from '../../src/data/exercises';
 import { SetResult } from '../../src/data/sessions';
+import { TFn, useI18n } from '../../src/i18n';
 import { useWorkout } from '../../src/store/workout';
 import { colors, radius, scoreColor, space, type } from '../../src/theme';
 
@@ -14,6 +15,7 @@ const SLIDES = ['score', 'range', 'tempo', 'form', 'balance', 'next'] as const;
 
 export default function Review() {
   const { lastSet, active, finishWorkout } = useWorkout();
+  const { t } = useI18n();
   const [i, setI] = useState(0);
   const bar = useRef(new Animated.Value(0)).current;
   const enter = useRef(new Animated.Value(0)).current;
@@ -33,7 +35,7 @@ export default function Review() {
   if (!lastSet) {
     return (
       <Screen style={{ alignItems: 'center', justifyContent: 'center' }}>
-        <Button title="Back to Home" onPress={() => router.replace('/home')} />
+        <Button title={t('rev.backHome')} onPress={() => router.replace('/home')} />
       </Screen>
     );
   }
@@ -64,9 +66,9 @@ export default function Review() {
       </View>
       <View style={st.head}>
         <Text style={type.small}>
-          {ex.name} · Set {setNo}
+          {t(`ex.${ex.id}.name`)} · {t('live.set', { n: setNo })}
         </Text>
-        <RestTimer />
+        <RestTimer label={t('rev.rest')} />
       </View>
 
       <View style={{ flex: 1 }}>
@@ -78,12 +80,12 @@ export default function Review() {
             transform: [{ translateY: enter.interpolate({ inputRange: [0, 1], outputRange: [24, 0] }) }],
           }}
         >
-          {SLIDES[i] === 'score' && <ScoreSlide s={s} />}
-          {SLIDES[i] === 'range' && <RangeSlide s={s} />}
-          {SLIDES[i] === 'tempo' && <TempoSlide s={s} ideal={ex.idealTempo} />}
-          {SLIDES[i] === 'form' && <FormSlide s={s} />}
-          {SLIDES[i] === 'balance' && <BalanceSlide s={s} />}
-          {SLIDES[i] === 'next' && <NextSlide s={s} />}
+          {SLIDES[i] === 'score' && <ScoreSlide s={s} t={t} />}
+          {SLIDES[i] === 'range' && <RangeSlide s={s} t={t} />}
+          {SLIDES[i] === 'tempo' && <TempoSlide s={s} ideal={ex.idealTempo} t={t} />}
+          {SLIDES[i] === 'form' && <FormSlide s={s} t={t} />}
+          {SLIDES[i] === 'balance' && <BalanceSlide s={s} t={t} />}
+          {SLIDES[i] === 'next' && <NextSlide s={s} t={t} />}
         </Animated.View>
 
         {/* tap zones (not on the last slide, which has buttons) */}
@@ -100,21 +102,21 @@ export default function Review() {
       <View style={st.footer}>
         {isLast ? (
           <>
-            <Button title={`Start set ${setNo + 1}`} onPress={() => router.replace({ pathname: '/workout/live', params: { exercise: s.exercise } })} />
+            <Button title={t('rev.startNext', { n: setNo + 1 })} onPress={() => router.replace({ pathname: '/workout/live', params: { exercise: s.exercise } })} />
             <View style={{ flexDirection: 'row', gap: space.sm }}>
-              <Button title="Change exercise" variant="secondary" style={{ flex: 1 }} onPress={() => router.replace('/workout/choose')} />
-              <Button title="Finish" variant="secondary" style={{ flex: 1 }} onPress={finish} />
+              <Button title={t('rev.change')} variant="secondary" style={{ flex: 1 }} onPress={() => router.replace('/workout/choose')} />
+              <Button title={t('rev.finish')} variant="secondary" style={{ flex: 1 }} onPress={finish} />
             </View>
           </>
         ) : (
-          <Button title="Skip to next set" variant="ghost" onPress={() => setI(SLIDES.length - 1)} />
+          <Button title={t('rev.skip')} variant="ghost" onPress={() => setI(SLIDES.length - 1)} />
         )}
       </View>
     </Screen>
   );
 }
 
-function RestTimer() {
+function RestTimer({ label }: { label: string }) {
   const [t, setT] = useState(0);
   useEffect(() => {
     const id = setInterval(() => setT((x) => x + 1), 1000);
@@ -122,7 +124,7 @@ function RestTimer() {
   }, []);
   return (
     <View style={st.rest}>
-      <Text style={[type.label, { fontSize: 10, color: colors.teal }]}>Rest</Text>
+      <Text style={[type.label, { fontSize: 10, color: colors.teal }]}>{label}</Text>
       <Text style={[type.h3, { fontVariant: ['tabular-nums'] }]}>
         {Math.floor(t / 60)}:{String(t % 60).padStart(2, '0')}
       </Text>
@@ -138,9 +140,10 @@ function Big({ children }: { children: React.ReactNode }) {
   return <Text style={st.big}>{children}</Text>;
 }
 
-const verdict = (x: number) => (x >= 90 ? 'Outstanding' : x >= 80 ? 'Strong set' : x >= 65 ? 'Solid work' : x >= 45 ? 'Room to improve' : 'Tough one');
+const verdict = (x: number, t: TFn) => t(x >= 90 ? 'rev.v.outstanding' : x >= 80 ? 'rev.v.strong' : x >= 65 ? 'rev.v.solid' : x >= 45 ? 'rev.v.room' : 'rev.v.tough');
+const sideWord = (side: 'left' | 'right', t: TFn) => t(side === 'left' ? 'common.leftLower' : 'common.rightLower');
 
-function ScoreSlide({ s }: { s: SetResult }) {
+function ScoreSlide({ s, t }: { s: SetResult; t: TFn }) {
   const [shown, setShown] = useState(0);
   useEffect(() => {
     let n = 0;
@@ -153,51 +156,45 @@ function ScoreSlide({ s }: { s: SetResult }) {
   }, [s.score]);
   return (
     <View style={st.slideCenter}>
-      <Kicker>Your set score</Kicker>
+      <Kicker>{t('rev.scoreKicker')}</Kicker>
       <ScoreRing score={shown} size={220} stroke={16} />
-      <Text style={[type.h1, { marginTop: space.xl }]}>{verdict(s.score)}</Text>
+      <Text style={[type.h1, { marginTop: space.xl }]}>{verdict(s.score, t)}</Text>
       <Text style={[type.body, { color: colors.textDim, marginTop: space.sm }]}>
-        {s.reps} reps · {s.durationSec ?? 0}s under tension
+        {t('rev.repsTension', { reps: s.reps, s: s.durationSec ?? 0 })}
       </Text>
     </View>
   );
 }
 
-function RangeSlide({ s }: { s: SetResult }) {
+function RangeSlide({ s, t }: { s: SetResult; t: TFn }) {
   const reps = s.repRom ?? [];
   const short = reps.filter((r) => r < 85).length;
   return (
     <View style={st.slide}>
-      <Kicker>Range of motion</Kicker>
+      <Kicker>{t('rev.romKicker')}</Kicker>
       <Big>
-        {short === 0 ? (
-          <>Every rep, <Text style={{ color: colors.teal }}>full range.</Text></>
-        ) : (
-          <>
-            <Text style={{ color: colors.orange }}>{short}</Text> {short === 1 ? 'rep was' : 'reps were'} cut short.
-          </>
-        )}
+        {short === 0 ? <Text style={{ color: colors.teal }}>{t('rev.romAll')}</Text> : t('rev.romShort', { n: short })}
       </Big>
       <Bars values={reps} max={110} threshold={85} unit="%" />
-      <Text style={type.small}>Bars below the line didn't reach the full range. Average {s.rom}/100.</Text>
+      <Text style={type.small}>{t('rev.romNote', { n: s.rom })}</Text>
     </View>
   );
 }
 
-function TempoSlide({ s, ideal }: { s: SetResult; ideal: [number, number] }) {
+function TempoSlide({ s, ideal, t }: { s: SetResult; ideal: [number, number]; t: TFn }) {
   const reps = s.repTempo ?? [];
   const fast = reps.filter((r) => r < ideal[0]).length;
   const avg = reps.length ? reps.reduce((a, b) => a + b, 0) / reps.length : 0;
   const maxT = Math.max(5, ...reps);
   return (
     <View style={st.slide}>
-      <Kicker>Tempo</Kicker>
+      <Kicker>{t('rev.tempoKicker')}</Kicker>
       <Big>
-        {avg.toFixed(1)}s <Text style={{ color: colors.textDim, fontSize: 28 }}>per rep</Text>
+        {avg.toFixed(1)}s <Text style={{ color: colors.textDim, fontSize: 28 }}>{t('rev.perRep')}</Text>
       </Big>
       <View style={st.chart}>
         <View style={[st.band, { bottom: `${(ideal[0] / maxT) * 100}%`, height: `${((ideal[1] - ideal[0]) / maxT) * 100}%` }]}>
-          <Text style={st.bandText}>Ideal</Text>
+          <Text style={st.bandText}>{t('rev.ideal')}</Text>
         </View>
         <View style={{ flexDirection: 'row', alignItems: 'flex-end', flex: 1, gap: 6 }}>
           {reps.map((r, k) => {
@@ -210,62 +207,63 @@ function TempoSlide({ s, ideal }: { s: SetResult; ideal: [number, number] }) {
           })}
         </View>
       </View>
-      <Text style={type.small}>{fast ? `${fast} ${fast === 1 ? 'rep was' : 'reps were'} rushed. Lower the weight for about 2 seconds.` : 'Nice control on every rep.'}</Text>
+      <Text style={type.small}>{fast ? t('rev.tempoRushed', { n: fast }) : t('rev.tempoGood')}</Text>
     </View>
   );
 }
 
-function FormSlide({ s }: { s: SetResult }) {
+function FormSlide({ s, t }: { s: SetResult; t: TFn }) {
   const reps = s.repForm ?? [];
   const bad = reps.filter((r) => r < 75).length;
   return (
     <View style={st.slide}>
-      <Kicker>Form</Kicker>
+      <Kicker>{t('rev.formKicker')}</Kicker>
       <Big>
         <Text style={{ color: scoreColor(s.form) }}>{s.form}</Text>
         <Text style={{ color: colors.textDim, fontSize: 28 }}> / 100</Text>
       </Big>
       <Bars values={reps} max={100} threshold={75} />
-      <Text style={type.small}>{bad ? `${bad} ${bad === 1 ? 'rep had' : 'reps had'} extra body movement. Keep everything but the working joint still.` : 'Rock solid. No swinging detected.'}</Text>
+      <Text style={type.small}>{bad ? t('rev.formBad', { n: bad }) : t('rev.formGood')}</Text>
     </View>
   );
 }
 
-function BalanceSlide({ s }: { s: SetResult }) {
+function BalanceSlide({ s, t }: { s: SetResult; t: TFn }) {
   const gap = Math.abs(s.balance.left - s.balance.right);
-  const weak = s.balance.left < s.balance.right ? 'left' : 'right';
+  const weak = s.balance.left < s.balance.right ? ('left' as const) : ('right' as const);
   return (
     <View style={st.slide}>
-      <Kicker>Left vs right</Kicker>
-      <Big>{gap <= 3 ? <Text style={{ color: colors.teal }}>Perfectly even.</Text> : <>Your <Text style={{ color: colors.orange }}>{weak}</Text> side did {gap}% less.</>}</Big>
+      <Kicker>{t('rev.balKicker')}</Kicker>
+      <Big>{gap <= 3 ? <Text style={{ color: colors.teal }}>{t('rev.balEven')}</Text> : t('rev.balWeak', { side: sideWord(weak, t), n: gap })}</Big>
       <View style={st.balRow}>
         <View style={{ flex: s.balance.left, alignItems: 'flex-start' }}>
           <Text style={[st.balNum, { color: colors.left }]}>{s.balance.left}%</Text>
           <View style={[st.balBar, { backgroundColor: colors.left }]} />
-          <Text style={type.label}>Left</Text>
+          <Text style={type.label}>{t('common.left')}</Text>
         </View>
         <View style={{ flex: s.balance.right, alignItems: 'flex-end' }}>
           <Text style={[st.balNum, { color: colors.right }]}>{s.balance.right}%</Text>
           <View style={[st.balBar, { backgroundColor: colors.right }]} />
-          <Text style={type.label}>Right</Text>
+          <Text style={type.label}>{t('common.right')}</Text>
         </View>
       </View>
-      <Text style={type.small}>Share of the total work done by each arm.</Text>
+      <Text style={type.small}>{t('rev.balNote')}</Text>
     </View>
   );
 }
 
-function NextSlide({ s }: { s: SetResult }) {
+function NextSlide({ s, t }: { s: SetResult; t: TFn }) {
+  const tip = setTip(s);
   return (
     <View style={st.slide}>
-      <Kicker>Coach's tip</Kicker>
-      <Big>{setTip(s)}</Big>
+      <Kicker>{t('rev.tipKicker')}</Kicker>
+      <Big>{t(tip.key, { side: tip.side ? sideWord(tip.side, t) : '' })}</Big>
       <View style={st.summaryRow}>
         {[
-          ['Score', s.score],
-          ['Range', s.rom],
-          ['Tempo', s.tempo],
-          ['Form', s.form],
+          [t('metric.score'), s.score],
+          [t('metric.rom'), s.rom],
+          [t('metric.tempo'), s.tempo],
+          [t('metric.form'), s.form],
         ].map(([k, v]) => (
           <View key={k} style={st.summaryCell}>
             <Text style={[type.h2, { color: scoreColor(v as number) }]}>{v}</Text>
