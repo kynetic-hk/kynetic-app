@@ -1,12 +1,14 @@
+import { router } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { Screen } from '../../src/components/Screen';
 import { PlayIcon, PodIcon } from '../../src/components/icons';
 import { Card, ScoreRing } from '../../src/components/ui';
 import { exerciseById } from '../../src/data/exercises';
-import { DEMO_SESSIONS, Session, sessionBalance, sessionScore } from '../../src/data/sessions';
+import { Session, sessionBalance, sessionScore } from '../../src/data/sessions';
 import { getSensorSource, SensorInfo } from '../../src/sensors';
 import { useProfile } from '../../src/store/profile';
+import { useWorkout } from '../../src/store/workout';
 import { colors, radius, scoreColor, space, type } from '../../src/theme';
 
 const greeting = () => {
@@ -25,10 +27,10 @@ export default function Home() {
   useEffect(() => getSensorSource().subscribe((e) => e.type === 'status' && setSensors(e.sensors)), []);
 
   const first = profile?.name.split(' ')[0] ?? '';
-  const sessions = DEMO_SESSIONS;
+  const { sessions, realCount } = useWorkout();
   const last = sessions[0];
   const lastScore = sessionScore(last);
-  const prevScore = sessionScore(sessions[1]);
+  const prevScore = sessions[1] ? sessionScore(sessions[1]) : lastScore;
   const delta = lastScore - prevScore;
   const bal = sessionBalance(last);
   const weaker = bal.left < bal.right ? 'left' : 'right';
@@ -36,7 +38,7 @@ export default function Home() {
   const connected = sensors.filter((s) => s.connected).length;
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: colors.bg }} edges={['top']}>
+    <Screen edges={['top']}>
       <ScrollView contentContainerStyle={st.page}>
         {/* header */}
         <View style={st.header}>
@@ -51,7 +53,7 @@ export default function Home() {
         </View>
 
         {/* start workout */}
-        <Pressable accessibilityRole="button" style={({ pressed }) => [st.start, pressed && { opacity: 0.9, transform: [{ scale: 0.99 }] }]}>
+        <Pressable accessibilityRole="button" onPress={() => router.push('/workout/choose')} style={({ pressed }) => [st.start, pressed && { opacity: 0.9, transform: [{ scale: 0.99 }] }]}>
           <View style={{ flex: 1 }}>
             <Text style={[type.label, { color: '#202020B3' }]}>Ready when you are</Text>
             <Text style={st.startTitle}>Start workout</Text>
@@ -106,9 +108,11 @@ export default function Home() {
           <SessionRow key={s.id} s={s} />
         ))}
 
-        <Text style={[type.small, { textAlign: 'center', marginTop: space.lg, color: colors.textMute }]}>Demo data · real sessions appear after your first workout</Text>
+        {realCount < 2 ? (
+          <Text style={[type.small, { textAlign: 'center', marginTop: space.lg, color: colors.textMute }]}>Includes demo sessions until you've logged two workouts</Text>
+        ) : null}
       </ScrollView>
-    </SafeAreaView>
+    </Screen>
   );
 }
 
@@ -158,7 +162,7 @@ function SessionRow({ s }: { s: Session }) {
   const score = sessionScore(s);
   const names = [...new Set(s.sets.map((x) => exerciseById(x.exercise).name))].join(' · ');
   return (
-    <Pressable accessibilityRole="button" style={({ pressed }) => [st.sessionRow, pressed && { backgroundColor: colors.surfaceHigh }]}>
+    <Pressable accessibilityRole="button" onPress={() => router.push(`/session/${s.id}`)} style={({ pressed }) => [st.sessionRow, pressed && { backgroundColor: colors.surfaceHigh }]}>
       <View style={[st.scoreBadge, { borderColor: scoreColor(score) }]}>
         <Text style={[type.h3, { color: scoreColor(score) }]}>{score}</Text>
       </View>
@@ -179,7 +183,7 @@ function SessionRow({ s }: { s: Session }) {
 }
 
 const st = StyleSheet.create({
-  page: { padding: space.xl, paddingBottom: space.xxxl },
+  page: { padding: space.xl, paddingBottom: 120 },
   header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: space.xl },
   podPill: {
     flexDirection: 'row',

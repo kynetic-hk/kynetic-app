@@ -13,7 +13,7 @@ export default function TabsLayout() {
         headerShown: false,
         tabBarActiveTintColor: colors.orange,
         tabBarInactiveTintColor: colors.textMute,
-        tabBarStyle: { backgroundColor: colors.bg, borderTopColor: colors.border, height: 64, paddingTop: 6 },
+        tabBarStyle: { backgroundColor: 'rgba(24,24,24,0.92)', position: 'absolute', borderTopColor: colors.border, height: 64, paddingTop: 6 },
         tabBarLabelStyle: { fontSize: 11, fontWeight: '600' },
         sceneStyle: { backgroundColor: colors.bg },
       }}

@@ -1,7 +1,7 @@
 import { router } from 'expo-router';
 import React, { useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { Screen } from '../../src/components/Screen';
 import { Button, Chip, Field, OptionCard, ProgressDots, Wordmark } from '../../src/components/ui';
 import { getSensorSource, SENSOR_LAYOUT, SensorId, SensorInfo } from '../../src/sensors';
 import { Experience, Goal, Profile, Side, useProfile } from '../../src/store/profile';
@@ -76,7 +76,7 @@ export default function Onboarding() {
   const first = name.trim().split(' ')[0];
 
   return (
-    <SafeAreaView style={st.safe} edges={['top', 'bottom']}>
+    <Screen edges={['top', 'bottom']}>
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         <View style={st.top}>
           <Pressable onPress={back} hitSlop={12} accessibilityRole="button" accessibilityLabel="Back">
@@ -184,7 +184,7 @@ export default function Onboarding() {
           )}
         </View>
       </KeyboardAvoidingView>
-    </SafeAreaView>
+    </Screen>
   );
 }
 
@@ -205,7 +205,7 @@ function Title({ kicker, title, sub }: { kicker?: string; title: string; sub?: s
 
 function Welcome({ onStart }: { onStart: () => void }) {
   return (
-    <SafeAreaView style={st.safe} edges={['top', 'bottom']}>
+    <Screen edges={['top', 'bottom']}>
       <View style={st.welcome}>
         <Wordmark size={20} />
         <View>
@@ -220,7 +220,7 @@ function Welcome({ onStart }: { onStart: () => void }) {
         </View>
         <Button title="Get started" onPress={onStart} />
       </View>
-    </SafeAreaView>
+    </Screen>
   );
 }
 
@@ -321,7 +321,7 @@ function Calibrate({ done, onDone }: { done: boolean; onDone: () => void }) {
 }
 
 const st = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: colors.bg },
+  safe: { flex: 1 },
   top: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: space.xl, paddingVertical: space.md },
   back: { color: colors.text, fontSize: 34, lineHeight: 34, fontWeight: '300' },
   body: { paddingHorizontal: space.xl, paddingTop: space.xl, paddingBottom: space.xxl },

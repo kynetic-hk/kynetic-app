@@ -1,6 +1,6 @@
 import { router } from 'expo-router';
 import { ScrollView, Text, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { Screen } from '../../src/components/Screen';
 import { Button, Card } from '../../src/components/ui';
 import { useProfile } from '../../src/store/profile';
 import { colors, space, type } from '../../src/theme';
@@ -30,8 +30,8 @@ export default function ProfileTab() {
   ];
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: colors.bg }} edges={['top']}>
-      <ScrollView contentContainerStyle={{ padding: space.xl }}>
+    <Screen edges={['top']}>
+      <ScrollView contentContainerStyle={{ padding: space.xl, paddingBottom: 120 }}>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: space.lg, marginBottom: space.xl }}>
           <View style={{ width: 64, height: 64, borderRadius: 32, backgroundColor: colors.orange, alignItems: 'center', justifyContent: 'center' }}>
             <Text style={{ fontSize: 28, fontWeight: '900', color: colors.bg }}>{profile.name[0]?.toUpperCase()}</Text>
@@ -72,7 +72,7 @@ export default function ProfileTab() {
         />
         <Text style={[type.small, { textAlign: 'center', marginTop: space.sm, color: colors.textMute }]}>Handy for demos — clears your profile on this device.</Text>
       </ScrollView>
-    </SafeAreaView>
+    </Screen>
   );
 }
 

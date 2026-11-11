@@ -27,6 +27,8 @@ export interface SensorSource {
   scan(): Promise<SensorInfo[]>;
   connect(ids: SensorId[]): Promise<void>;
   calibrate(): Promise<void>; // user holds the neutral pose
+  setExercise(id: string): void; // tells the hub which exercise mode to run
+  startSet(): void; // resets the stream clock for a new set
   subscribe(cb: (e: SensorEvent) => void): () => void;
   disconnect(): Promise<void>;
 }

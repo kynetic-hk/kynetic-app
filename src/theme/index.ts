@@ -2,9 +2,10 @@
 // FFFBF5 cream · B9B9B9 light grey · 666666 grey · 202020 charcoal · FF7700 orange · 30BABA teal
 export const colors = {
   bg: '#202020', // palette charcoal
-  surface: '#2A2A2A', // charcoal, one step lighter for cards
-  surfaceHigh: '#343434',
-  border: '#3A3A3A',
+  surface: 'rgba(42,42,42,0.72)', // charcoal glass for cards (background glows through)
+  surfaceHigh: 'rgba(60,60,60,0.75)',
+  surfaceSolid: '#2A2A2A',
+  border: 'rgba(255,251,245,0.09)',
   text: '#FFFBF5', // palette cream
   textDim: '#B9B9B9', // palette light grey
   textMute: '#8A8A8A', // between palette greys, readable on charcoal
